@@ -400,16 +400,93 @@ public class Hotel {
 
 // Rest of the functions definition go in here
 
-   public static void viewHotels(Hotel esql) {}
-   public static void viewRooms(Hotel esql) {}
-   public static void bookRooms(Hotel esql) {}
-   public static void viewRecentBookingsfromCustomer(Hotel esql) {}
-   public static void updateRoomInfo(Hotel esql) {}
-   public static void viewRecentUpdates(Hotel esql) {}
-   public static void viewBookingHistoryofHotel(Hotel esql) {}
-   public static void viewRegularCustomers(Hotel esql) {}
-   public static void placeRoomRepairRequests(Hotel esql) {}
-   public static void viewRoomRepairHistory(Hotel esql) {}
+   public static void viewHotels(Hotel esql) {
+         try {
+         System.out.print("\tEnter your location (latitude): ");
+         String latitude = in.readLine();
+         System.out.print("\tEnter your location (longitude): ");
+         String longitude = in.readLine();
+         String query = String.format("SELECT * FROM Hotel WHERE calculate_distance(latitude, longitude, '%s', '%s') <= 30", latitude, longitude);
+         esql.executeQueryAndPrintResult(query);
+	 System.out.print("Press Enter to return to Main Menu");
+	 String temp = in.readLine();
+      }
+      catch(Exception e){
+         System.err.println(e.getMessage());
+      }
+   }
+
+
+
+   public static void viewRooms(Hotel esql) {
+	try {
+         System.out.print("Enter hotel ID: ");
+         int hotelID = Integer.parseInt(in.readLine());
+         System.out.print("Enter booking date (YYYY-MM-DD): ");
+         String bookingDate = in.readLine();
+
+         String query = String.format("SELECT r.roomNumber, r.price, CASE WHEN (b.bookingDate IS NULL) THEN 'Available' ELSE 'Booked' END AS availability " + 
+                                       "FROM Rooms r " +
+                                       "LEFT JOIN RoomBookings b " +
+                                       "ON r.hotelID = b.hotelID AND r.roomNumber = b.roomNumber AND b.bookingDate = '%s' " +
+                                       "WHERE r.hotelID = %d " +
+                                       "ORDER BY r.roomNumber", bookingDate, hotelID);
+         esql.executeQueryAndPrintResult(query);
+      }  
+      catch (Exception e) {
+         System.err.println(e.getMessage());
+      }
+}
+
+
+   public static void bookRooms(Hotel esql) {
+	try{
+	 System.out.print("Enter UserID: ");
+	 int customerID = Integer.parseInt(in.readLine());
+         System.out.print("Enter hotel ID: ");
+         int hotelID = Integer.parseInt(in.readLine());
+         System.out.print("Enter room number: ");
+         int roomNumber = Integer.parseInt(in.readLine());
+         System.out.print("Enter booking date (YYYY-MM-DD): ");
+         String bookingDate = in.readLine();
+
+         String checkAvailabilityQuery = String.format("SELECT * FROM RoomBookings WHERE hotelID = %d AND roomNumber = %d AND bookingDate = '%s'",
+                                                      hotelID, roomNumber, bookingDate
+         );
+	 esql.executeQueryAndPrintResult(checkAvailabilityQuery);
+         int numBookings = esql.executeQuery(checkAvailabilityQuery);
+         if (numBookings > 0) {
+            System.out.println("We apoligize but that room is not availible for the date selected.");
+            return;
+         }
+
+         String getPriceQuery = String.format("SELECT price FROM Rooms WHERE hotelID = %d AND roomNumber = %d",
+                                             hotelID, roomNumber
+         );
+         List<List<String>> roomInfo = esql.executeQueryAndReturnResult(getPriceQuery);
+         if (roomInfo.isEmpty()) {
+            System.out.println("No such room exists in our database.");
+            return;
+         }
+         int roomPrice = Integer.parseInt(roomInfo.get(0).get(0));
+
+         String bookRoomQuery = String.format("INSERT INTO RoomBookings (customerID, hotelID, roomNumber, bookingDate) VALUES (%d, %d, %d, '%s')",  customerID, hotelID, roomNumber, bookingDate);
+         esql.executeUpdate(bookRoomQuery);
+         System.out.println("Booking successful! The room price is $" + roomPrice);
+      } 
+         catch (Exception e) {
+         System.err.println(e.getMessage());
+         }
+   }
+
+   public static void viewRecentBookingsfromCustomer(Hotel esql) {return;}
+   public static void updateRoomInfo(Hotel esql) {return;}
+   public static void viewRecentUpdates(Hotel esql) {return;}
+   public static void viewBookingHistoryofHotel(Hotel esql) {return;}
+   public static void viewRegularCustomers(Hotel esql) {return;}
+   public static void placeRoomRepairRequests(Hotel esql) {return;}
+   public static void viewRoomRepairHistory(Hotel esql) {return;}
+
 
 }//end Hotel
 
