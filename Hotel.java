@@ -538,13 +538,11 @@ public class Hotel {
 			String RoomNumber = in.readLine();
 			
 			String getManagedHotelsQuery = String.format("SELECT HotelID FROM Hotel WHERE managerUserID = %s;", Global.userID);
-			esql.executeQueryAndPrintResult(getManagedHotelsQuery);
 			List<List<String>> ManagingHotelIDs = esql.executeQueryAndReturnResult(getManagedHotelsQuery);
 
 			for(int i = 0; i < ManagingHotelIDs.size(); i++){
 				if(ManagingHotelIDs.get(i).get(0).equals(HotelID)){
 					hotelAccess = true;
-					System.out.println("We got Hotel access");
 				}
 			}
 			
@@ -600,11 +598,227 @@ public class Hotel {
 		System.err.println(e.getMessage());
 	}
 }
-   public static void viewRecentUpdates(Hotel esql) {return;}
-   public static void viewBookingHistoryofHotel(Hotel esql) {return;}
-   public static void viewRegularCustomers(Hotel esql) {return;}
-   public static void placeRoomRepairRequests(Hotel esql) {return;}
-   public static void viewRoomRepairHistory(Hotel esql) {return;}
+   public static void viewRecentUpdates(Hotel esql) {
+	try{
+	 	String getManagedHotelQuery = String.format("SELECT HotelID FROM Hotel WHERE managerUserID = %s;", Global.userID);
+		List<List<String>> ManagingHotelIDs = esql.executeQueryAndReturnResult(getManagedHotelQuery);
+		boolean hotelAccess = false;
+		String HotelID;
+		
+		System.out.println("Enter the hotelID");
+		HotelID = in.readLine();
+		for(int i = 0; i < ManagingHotelIDs.size(); i++){
+				if(ManagingHotelIDs.get(i).get(0).equals(HotelID)){
+					hotelAccess = true;
+				}
+		}
+		if(hotelAccess){
+			String getRecentHotelUpdates = String.format("SELECT * FROM RoomUpdatesLog WHERE hotelID = %s LIMIT 5;", HotelID);
+			esql.executeQueryAndPrintResult(getRecentHotelUpdates);
+			System.out.println("Press Enter to return to main menu");
+			String temp = in.readLine();
+			return;
+		} 
+		else{
+			System.out.println("Access Denied: must be a manager of this hotel to view update history");
+			System.out.println("Press Enter to return to main menu");
+			String temp = in.readLine();
+			return;
+		}
+	} 
+	catch(Exception e){
+		System.err.println(e.getMessage());
+
+	} 
+   }
+   public static void viewBookingHistoryofHotel(Hotel esql) {
+	try
+	{
+		String temp;
+		boolean hotelAccess = false;
+		String getManagedHotelsQuery = String.format("SELECT HotelID FROM Hotel WHERE managerUserID = %s;", Global.userID);
+		List<List<String>> ManagingHotelIDs = esql.executeQueryAndReturnResult(getManagedHotelsQuery);
+		
+		System.out.println("Enter the hotelID: ");
+		String HotelID = in.readLine();
+
+		for(int i = 0; i < ManagingHotelIDs.size(); i++){
+			if(ManagingHotelIDs.get(i).get(0).equals(HotelID)){
+				hotelAccess = true;
+			}
+		}
+		if(hotelAccess)
+		{
+			System.out.println("Choose option");
+			System.out.println("1. Get bookings by date range");
+			System.out.println("2. Get all bookings");
+			System.out.println("3. Exit");
+		
+		switch(readChoice())
+		{
+			case 1:
+				System.out.println("Enter the start date in your range [yyyy-mm-dd]");
+				String startDate = in.readLine();
+				System.out.println("Enter the end date in your range [yyyy-mm-dd]");
+				String endDate = in.readLine();
+				String HotelBookingHistory = String.format("SELECT RB.bookingID, U.name, RB.hotelID, RB.roomNumber, RB.bookingDate FROM RoomBookings RB INNER JOIN Users U ON RB.customerID = userID WHERE hotelID = %s AND RB.bookingDate > '%s' AND  RB.bookingDate < '%s';", HotelID, startDate, endDate);
+				esql.executeQueryAndPrintResult(HotelBookingHistory);
+				System.out.println("Press Enter to return to main menu");
+				temp = in.readLine();
+				break;
+			case 2:
+				HotelBookingHistory = String.format("SELECT RB.bookingID, U.name, RB.hotelID, RB.roomNumber, RB.bookingDate FROM RoomBookings RB INNER JOIN Users U ON RB.customerID = userID WHERE hotelID = %s;", HotelID);
+				esql.executeQueryAndPrintResult(HotelBookingHistory);
+				System.out.println("Press Enter to return to main menu");
+				temp = in.readLine();
+				break;
+			default: 
+				System.out.println("Unrecognized choice returning to main menu");
+				System.out.println("Press Enter");
+				temp = in.readLine();
+				break;
+		}
+		}
+		else
+		{
+			System.out.println("Access Denied: must be a manager at this hotel to access booking information");
+			System.out.println("Press Enter to return to main menu");
+			temp = in.readLine();
+			return;
+		}
+						
+	}
+	catch(Exception e)
+	{ 
+		System.err.println(e.getMessage());
+	}
+   }
+   public static void viewRegularCustomers(Hotel esql) {
+	try
+	{
+		String temp;
+		boolean hotelAccess = false;
+		System.out.println("Enter hotel ID: ");
+		String HotelID = in.readLine();
+
+		String getManagedHotelsQuery = String.format("SELECT HotelID FROM Hotel WHERE managerUserID = %s;", Global.userID);
+		List<List<String>> ManagingHotelIDs = esql.executeQueryAndReturnResult(getManagedHotelsQuery);
+
+		for(int i = 0; i < ManagingHotelIDs.size(); i++){
+			if(ManagingHotelIDs.get(i).get(0).equals(HotelID)){
+				hotelAccess = true;
+			}
+		}
+		if(hotelAccess)
+		{
+			String getRegularCustomerQuery = String.format("Select U.name From Users U WHERE U.userID = ANY(SELECT customerID FROM( SELECT DISTINCT customerID, COUNT(*) FROM RoomBookings RB WHERE RB.hotelID = %s GROUP BY customerID ORDER BY COUNT(*) LIMIT 5) AS foo);", HotelID);
+			esql.executeQueryAndPrintResult(getRegularCustomerQuery);
+			System.out.println("Press Enter to return to main menu");
+			temp = in.readLine();
+			return;
+		}
+		else
+		{
+			System.out.println("Access Denied: Must be a manager of this hotel to access");
+			System.out.println("Press Enter to return to main menu");
+			temp = in.readLine();
+			return;
+		}
+	}
+	catch(Exception e)
+	{
+		System.err.println(e.getMessage());
+	}
+   }
+   public static void placeRoomRepairRequests(Hotel esql) 
+   {
+	try
+	{
+		String temp;
+		boolean hotelAccess = false;
+		System.out.println("Enter hotel ID: ");
+		String HotelID = in.readLine();
+		
+		String getManagedHotelsQuery = String.format("SELECT HotelID FROM Hotel WHERE managerUserID = %s;", Global.userID);
+		List<List<String>> ManagingHotelIDs = esql.executeQueryAndReturnResult(getManagedHotelsQuery);
+
+		for(int i = 0; i < ManagingHotelIDs.size(); i++){
+			if(ManagingHotelIDs.get(i).get(0).equals(HotelID)){
+				hotelAccess = true;
+			}
+		}	
+		if(hotelAccess)
+		{
+			System.out.println("Enter room number: ");
+			String RoomNumber = in.readLine();
+			System.out.println("Enter company ID: ");
+			String CompanyID = in.readLine();
+			
+			String newRoomRepairQuery = String.format("INSERT INTO RoomRepairs (companyID, hotelID, roomNumber, repairdate) VALUES (%s , %s , %s, DATE_TRUNC('minute', CURRENT_TIMESTAMP::timestamp));", CompanyID, HotelID, RoomNumber);
+			String getRepairID = String.format("SELECT repairID FROM RoomRepairs ORDER BY repairID DESC LIMIT 1");
+			esql.executeUpdate(newRoomRepairQuery);
+			List<List<String>> RepairID = esql.executeQueryAndReturnResult(getRepairID);
+
+			String logRoomRepairQuery = String.format("INSERT INTO RoomRepairRequests (managerID, repairID) VALUES (%s, %s);", Global.userID, RepairID.get(0).get(0));
+			esql.executeUpdate(logRoomRepairQuery);
+
+			System.out.println("Repair request submitted");
+			System.out.println("Repair request logged");
+			System.out.println("Press Enter to return to main menu");
+			temp = in.readLine();
+			return;
+		}
+		else
+		{
+			System.out.println("Access Denied: must be a manager of this hotel to access");
+			System.out.println("Press Enter to return to main menu");
+			temp = in.readLine();
+			return;
+		}
+	}
+	catch(Exception e)
+	{
+		System.err.println(e.getMessage());
+	}
+   }
+   public static void viewRoomRepairHistory(Hotel esql)
+   {
+	try
+	{
+		String temp;
+		boolean hotelAccess = false;
+		System.out.println("Enter hotelID: ");
+		String HotelID = in.readLine();
+		
+		String getManagedHotelsQuery = String.format("SELECT HotelID FROM Hotel WHERE managerUserID = %s;", Global.userID);		
+		List<List<String>> ManagingHotelIDs = esql.executeQueryAndReturnResult(getManagedHotelsQuery);
+
+		for(int i = 0; i < ManagingHotelIDs.size(); i++){
+			if(ManagingHotelIDs.get(i).get(0).equals(HotelID)){
+				hotelAccess = true;
+			}
+		}
+		if(hotelAccess)
+		{
+			String RoomRepairHistoryQuery = String.format("SELECT companyID, hotelID, roomNumber, repairDate FROM RoomRepairs WHERE hotelID = '%s';", HotelID);
+			esql.executeQueryAndPrintResult(RoomRepairHistoryQuery);
+			System.out.println("Press Enter to return to main menu");
+			temp = in.readLine();
+			return;
+		}
+		else
+		{
+			System.out.println("Access Denied: must be a manager of this hotel to access");
+			System.out.println("Press Enter to return to main menu");
+			temp = in.readLine();
+			return;
+		}
+	}
+	catch(Exception e)
+	{
+		System.err.println(e.getMessage());
+	}
+   }
 
 
 }//end Hotel
